@@ -74,8 +74,10 @@ class CDECDataset(Dataset):
 
             label = int(fields[label_index])
 
-            tokenized_sentence1 = self.tokenizer(sentence1, truncation=True, padding='max_length', max_length=128)
-            tokenized_sentence2 = self.tokenizer(sentence2, truncation=True, padding='max_length', max_length=128)
+            tokenized_sentence1 = self.tokenizer(sentence1, truncation=True, padding='max_length',
+                                                 max_length=128, return_tensors='pt')
+            tokenized_sentence2 = self.tokenizer(sentence2, truncation=True, padding='max_length',
+                                                 max_length=128, return_tensors='pt')
 
             sample = {
                 'event1_id': event1_id,
@@ -93,30 +95,3 @@ class CDECDataset(Dataset):
         except ValueError as e:
             logger.error(f"({self.split.capitalize()} Split) Error processing line: {fields} - {e}")
             raise e
-
-
-if __name__ == '__main__':
-    logger = setup_logger(log_level="DEBUG")
-
-    train_set_path = '../data/event_pairs.train'
-    dev_set_path = '../data/event_pairs.dev'
-    test_set_path = '../data/event_pairs.test'
-
-    train_dataset = CDECDataset(data_path=train_set_path, tokenizer_name='roberta-base', split='train')
-    dev_dataset = CDECDataset(data_path=dev_set_path, tokenizer_name='roberta-base', split='dev')
-    test_dataset = CDECDataset(data_path=test_set_path, tokenizer_name='roberta-base', split='test')
-
-    logger.debug("\n--- Train Sample ---")
-    sample_train = train_dataset[0]
-    logger.debug("Sample Data (Train): {}", sample_train)
-    logger.info("Number of samples (Train): {}", len(train_dataset))
-
-    logger.debug("\n--- Dev Sample ---")
-    sample_dev = dev_dataset[0]
-    logger.debug("Sample Data (Dev): {}", sample_dev)
-    logger.info("Number of samples (Dev): {}", len(dev_dataset))
-
-    logger.debug("\n--- Test Sample ---")
-    sample_test = test_dataset[0]
-    logger.debug("Sample Data (Test): {}", sample_test)
-    logger.info("Number of samples (Test): {}", len(test_dataset))
