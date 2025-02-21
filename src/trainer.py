@@ -7,7 +7,7 @@ from data_loaders import create_data_loaders
 from logger import setup_logger, logger
 import tqdm
 
-logger = setup_logger(log_level="DEBUG")
+logger = setup_logger(log_level="DEBUG") # Set log level to DEBUG for more detailed output
 
 def train_model(train_data_path, dev_data_path, test_data_path,
                 pretrained_model_name, tokenizer_name, batch_size,
@@ -28,8 +28,8 @@ def train_model(train_data_path, dev_data_path, test_data_path,
 
     # 2. Load Pre-trained Model
     logger.info("Loading Pre-trained Model...")
-    model = load_pretrained_model(pretrained_model_name, num_labels=2, use_peft=use_peft) # Pass use_peft
-    model.to(device) # Move model to device (GPU or CPU)
+    model = load_pretrained_model(pretrained_model_name, num_labels=2, use_peft=use_peft)
+    model.to(device)
     logger.info(f"Pre-trained Model '{pretrained_model_name}' loaded and moved to {device}.")
 
     # 3. Define Optimizer and Scheduler
@@ -53,16 +53,19 @@ def train_model(train_data_path, dev_data_path, test_data_path,
     for epoch in range(epochs):
         logger.info(f"Epoch {epoch + 1}/{epochs}")
         epoch_loss = 0.0
-        progress_bar = tqdm.tqdm(enumerate(train_dataloader), total=len(train_dataloader),
-                                 desc=f"Epoch {epoch + 1} Training")
+        progress_bar = tqdm.tqdm(train_dataloader, total=len(train_dataloader),
+                                 desc=f"Epoch {epoch + 1} Training")  # Progress bar - NO enumerate
 
-        for batch_idx, batch in progress_bar:
-            input_ids_sentence1 = batch['input_ids_sentence1'].to(device)
-            attention_mask_sentence1 = batch['attention_mask_sentence1'].to(device)
-            input_ids_sentence2 = batch['input_ids_sentence2'].to(device)
-            attention_mask_sentence2 = batch['attention_mask_sentence2'].to(device)
+        # Direct iteration over train_dataloader, NO enumerate
+        for batch in progress_bar:  # Iterate directly over batch, NO batch_idx
+            # Move batch to device - ACCESS DATA THROUGH KEYS of BATCH DICTIONARY
+            input_ids_sentence1 = batch['input_ids_sentence1'].squeeze(1).to(device)  # Squeeze dimension 1
+            attention_mask_sentence1 = batch['attention_mask_sentence1'].squeeze(1).to(device)  # Squeeze dimension 1
+            input_ids_sentence2 = batch['input_ids_sentence2'].squeeze(1).to(device)  # Squeeze dimension 1
+            attention_mask_sentence2 = batch['attention_mask_sentence2'].squeeze(1).to(device)  # Squeeze dimension 1
             labels = batch['label'].to(device)
 
+            # Zero gradients
             optimizer.zero_grad()
 
             # Forward pass
@@ -87,15 +90,11 @@ def train_model(train_data_path, dev_data_path, test_data_path,
 
     logger.info("--- Training Loop Completed ---")
 
-
-    # 5. Evaluation (on Dev set - implemented later)
-    # 6. Saving Best Model (implemented later)
-
-    logger.info("--- Initial setup completed. Ready to start training loop. ---")
-    return model, train_dataloader, dev_dataloader, test_dataloader, optimizer, scheduler # Return components for training loop
+    return model, train_dataloader, dev_dataloader, test_dataloader, optimizer, scheduler
 
 
 if __name__ == '__main__':
+    # --- Configuration and Hyperparameters ---
     train_data_path = '../data/event_pairs.train'
     dev_data_path = '../data/event_pairs.dev'
     test_data_path = '../data/event_pairs.test'
@@ -103,7 +102,7 @@ if __name__ == '__main__':
     tokenizer_name = 'roberta-base'
     batch_size = 16
     learning_rate = 2e-5
-    epochs = 3
+    epochs = 1 # Reduced epochs to speed up debugging
     warmup_steps_ratio = 0.1
     weight_decay = 0.01
     use_peft = True
@@ -120,14 +119,7 @@ if __name__ == '__main__':
             device, use_peft=use_peft
         )
         logger.info("Fine-tuning process setup completed successfully!")
-
-        logger.debug("Model: {}", type(model))
-        logger.debug("Train Dataloader: {}", type(train_loader))
-        logger.debug("Dev Dataloader: {}", type(dev_loader))
-        logger.debug("Test Dataloader: {}", type(test_loader))
-        logger.debug("Optimizer: {}", type(optimizer))
-        logger.debug("Scheduler: {}", type(scheduler))
-
+        logger.info("--- Basic Training Loop Test Completed. ---")
 
     except Exception as e:
         logger.critical(f"Fine-tuning process setup failed: {e}")
