@@ -56,9 +56,7 @@ def train_model(train_data_path, dev_data_path, test_data_path,
         progress_bar = tqdm.tqdm(train_dataloader, total=len(train_dataloader),
                                  desc=f"Epoch {epoch + 1} Training")  # Progress bar - NO enumerate
 
-        # Direct iteration over train_dataloader, NO enumerate
-        for batch in progress_bar:  # Iterate directly over batch, NO batch_idx
-            # Move batch to device - ACCESS DATA THROUGH KEYS of BATCH DICTIONARY
+        for batch in progress_bar:
             input_ids_sentence1 = batch['input_ids_sentence1'].squeeze(1).to(device)  # Squeeze dimension 1
             attention_mask_sentence1 = batch['attention_mask_sentence1'].squeeze(1).to(device)  # Squeeze dimension 1
             input_ids_sentence2 = batch['input_ids_sentence2'].squeeze(1).to(device)  # Squeeze dimension 1
