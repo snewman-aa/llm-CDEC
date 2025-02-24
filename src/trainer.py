@@ -98,9 +98,9 @@ def train_model(train_data_path, dev_data_path, test_data_path,
 
 
 if __name__ == '__main__':
-    train_data_path = '../data/event_pairs.train'
-    dev_data_path = '../data/event_pairs.dev'
-    test_data_path = '../data/event_pairs.test'
+    train_data_path = 'llm-CDEC/data/event_pairs.train'
+    dev_data_path = 'llm-CDEC/data/event_pairs.dev'
+    test_data_path = 'llm-CDEC/data/event_pairs.test'
     pretrained_model_name = 'roberta-base'
     tokenizer_name = 'roberta-base'
     batch_size = 16
