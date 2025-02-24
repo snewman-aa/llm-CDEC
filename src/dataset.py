@@ -46,7 +46,7 @@ class CDECDataset(Dataset):
         return processed_data
 
     def process_line(self, fields, line_count):
-        """Processes a single line from the data file, handling different splits."""
+        """Processes a single line from the data file"""
         id_fields_present = (self.split == 'test')
 
         try:
