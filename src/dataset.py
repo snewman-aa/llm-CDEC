@@ -65,12 +65,8 @@ class CDECDataset(Dataset):
 
 
             sentence1 = fields[sentence1_index_offset]
-            event1_trigger_start = int(fields[sentence1_index_offset + 1])
-            event1_trigger_end = int(fields[sentence1_index_offset + 2])
 
             sentence2 = fields[sentence2_index_offset]
-            event2_trigger_start = int(fields[sentence2_index_offset + 1])
-            event2_trigger_end = int(fields[sentence2_index_offset + 2])
 
             label = int(fields[label_index])
 
