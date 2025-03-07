@@ -1,4 +1,3 @@
-import torch
 from transformers import RobertaForSequenceClassification
 from peft import LoraConfig, get_peft_model
 from logger import setup_logger, logger

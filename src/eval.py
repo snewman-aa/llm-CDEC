@@ -108,10 +108,6 @@ if __name__ == '__main__':
             test_data_path, tokenizer_name, model_repo_or_path, batch_size, device, use_peft=use_peft
         )
         logger.info("Model evaluation completed successfully!")
-        logger.info("--- Evaluation Metrics ---")
-        logger.info(f"  F1 Score (Positive Class): {evaluation_metrics['positive_f1']:.4f}")
-        logger.info(f"  Accuracy: {evaluation_metrics['accuracy']:.4f}")
-        logger.debug(f"  Full Classification Report:\n{evaluation_metrics['classification_report']}")
 
     except Exception as e:
         logger.critical(f"Model evaluation failed: {e}")

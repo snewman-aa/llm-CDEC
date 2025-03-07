@@ -2,21 +2,24 @@ from torch.utils.data import Dataset
 from transformers import RobertaTokenizerFast
 from logger import setup_logger, logger
 from tqdm import tqdm
+import random
 
 logger = setup_logger(log_level="INFO")
 
 class CDECDataset(Dataset):
-    def __init__(self, data_path, tokenizer_name, split='train'):
+    def __init__(self, data_path, tokenizer_name, split='train', undersample_negative=False):
         """
         Args:
             data_path (str): Path to the data file.
             tokenizer_name (str): Name of the tokenizer to use (e.g., 'roberta-base').
             split (str):  Dataset split ('train', 'dev', 'test'). Defaults to 'train'.
+            undersample_negative (bool): Whether to undersample negative samples in training data.
         """
         self.data_path = data_path
         self.tokenizer_name = tokenizer_name
         self.tokenizer = RobertaTokenizerFast.from_pretrained(tokenizer_name)
         self.split = split
+        self.undersample_negative = undersample_negative
         self.data = self.load_and_preprocess_data()
 
     def __len__(self):
@@ -25,29 +28,17 @@ class CDECDataset(Dataset):
     def __getitem__(self, idx):
         return self.data[idx]
 
-    def load_and_preprocess_data(self):
-        logger.info(f"Loading and preprocessing data from: {self.data_path} for {self.split} split...")
-        processed_data = []
-        line_count = 0
-        total_lines = 0
-
-        with open(self.data_path, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-            total_lines = len(lines)
-            logger.info(f"Processing {total_lines} lines from {self.data_path}...")
-
-            for line in tqdm(lines, desc=f"Processing {self.split} data", unit="line"):
-                line_count += 1
-                sample = self.process_line(line.strip().split('\t'), line_count)
-                processed_data.append(sample)
-
-        logger.info(f"Finished processing {self.split} data.")
-        logger.info(f"Loaded {len(processed_data)} samples for {self.split} split.")
-        return processed_data
-
     def process_line(self, fields, line_count):
-        """Processes a single line from the data file"""
+        """Processes a single line, skipping malformed lines with insufficient fields."""
         id_fields_present = (self.split == 'test')
+
+        min_expected_fields = 23 if not id_fields_present else 25
+
+        if len(fields) < min_expected_fields:
+            logger.warning(f"({self.split.capitalize()} Split) Line {line_count} is malformed (only {len(fields)}"
+                           f" fields, expected at least {min_expected_fields}). Skipping line. Fields: {fields}")
+            return None
+
 
         try:
             if id_fields_present:
@@ -65,9 +56,13 @@ class CDECDataset(Dataset):
 
 
             sentence1 = fields[sentence1_index_offset]
-
             sentence2 = fields[sentence2_index_offset]
 
+
+            if label_index >= len(fields):
+                logger.error(f"({self.split.capitalize()} Split) Line {line_count}: label_index ({label_index})"
+                             f" out of range for fields of length {len(fields)}. Fields: {fields}")
+                return None
             label = int(fields[label_index])
 
             tokenized_sentence1 = self.tokenizer(sentence1, truncation=True, padding='max_length',
@@ -90,4 +85,35 @@ class CDECDataset(Dataset):
 
         except ValueError as e:
             logger.error(f"({self.split.capitalize()} Split) Error processing line: {fields} - {e}")
-            raise e
+            return None
+
+    def load_and_preprocess_data(self):
+        logger.info(f"Loading and preprocessing data from: {self.data_path} for {self.split} split...")
+        processed_data = []
+        line_count = 0
+        total_lines = 0
+
+        with open(self.data_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+            total_lines = len(lines)
+            logger.info(f"Processing {total_lines} lines from {self.data_path}...")
+
+            for line in tqdm(lines, desc=f"Processing {self.split} data", unit="line"):
+                line_count += 1
+                sample = self.process_line(line.strip().split('\t'), line_count)
+                if sample is not None:
+                    processed_data.append(sample)
+
+            # Remove 90% of negative samples
+            if self.undersample_negative and self.split == 'train':
+                logger.info("Undersampling negative samples in training data...")
+                positive_samples = [sample for sample in processed_data if sample['label'] == 1]
+                negative_samples = [sample for sample in processed_data if sample['label'] == 0]
+                negative_samples = random.sample(negative_samples, k=int(0.1 * len(negative_samples)))
+                processed_data = positive_samples + negative_samples
+                random.shuffle(processed_data)
+                logger.info("Negative samples undersampled.")
+
+        logger.info(f"Finished processing {self.split} data.")
+        logger.info(f"Loaded {len(processed_data)} samples for {self.split} split.")
+        return processed_data

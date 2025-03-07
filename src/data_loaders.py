@@ -14,7 +14,7 @@ def create_data_loaders(train_data_path, dev_data_path, test_data_path, tokenize
     if train_data_path and train_data_path != 'dummy_train_path':
         logger.info(f"Creating Train Dataset from: {train_data_path}")
         try:
-            train_dataset = CDECDataset(train_data_path, tokenizer_name, split='train')
+            train_dataset = CDECDataset(train_data_path, tokenizer_name, split='train', undersample_negative=True)
         except FileNotFoundError:
             logger.error(f"Train data file not found at: {train_data_path}. Please check the path.")
             raise
@@ -22,7 +22,7 @@ def create_data_loaders(train_data_path, dev_data_path, test_data_path, tokenize
         train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
         logger.info("Train DataLoader created.")
     else:
-        logger.info("Train DataLoader creation skipped (dummy path or no path provided).")
+        logger.info("Train DataLoader creation skipped.")
         train_dataloader = None
 
     if dev_data_path and dev_data_path != 'dummy_dev_path':
@@ -36,7 +36,7 @@ def create_data_loaders(train_data_path, dev_data_path, test_data_path, tokenize
         dev_dataloader = DataLoader(dev_dataset, batch_size=batch_size, shuffle=False)
         logger.info("Dev DataLoader created.")
     else:
-        logger.info("Dev DataLoader creation skipped (dummy path or no path provided).")
+        logger.info("Dev DataLoader creation skipped.")
         dev_dataloader = None
 
 
@@ -54,5 +54,5 @@ def create_data_loaders(train_data_path, dev_data_path, test_data_path, tokenize
         logger.error("Test data path is missing. Evaluation cannot proceed without test data.")
         raise ValueError("Test data path is required for evaluation.")
 
-    logger.info("All DataLoaders created (or skipped if dummy paths provided).")
+    logger.info("All DataLoaders created.")
     return train_dataloader, dev_dataloader, test_dataloader
